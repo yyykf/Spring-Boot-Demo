@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.*;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * RedisController 的主控制器
@@ -236,6 +238,82 @@ public class RedisTemplateController {
         result.put("scoreSetWithScores", scoreSetWithScores);
         result.put("lexSet", lexSet);
         result.put("score", score);
+
+        return result;
+    }
+
+    /**
+     * Redis事务
+     * 
+     * @return 执行结果
+     */
+    @SuppressWarnings("unchecked")
+    @GetMapping("/multi")
+    public Map<String, Object> multiOps() {
+        // 设置待监控的key
+        redisTemplate.opsForValue().set("multiKey", "multi");
+        // 使用同一Redis连接
+        List list = (List)redisTemplate.execute(new SessionCallback<Object>() {
+            @Override
+            public Object execute(RedisOperations operations) throws DataAccessException {
+                // 监控Key变化
+                operations.watch("multiKey");
+                // 开启事务，命令进行队列，暂不执行
+                operations.multi();
+                operations.opsForValue().set("multiKey1", "value");
+                operations.opsForValue().set("multiKey2", "value");
+                // 获取值为null，因为命令还在队列中未执行
+                Object multiKey1 = operations.opsForValue().get("multiKey1");
+                Object multiKey2 = operations.opsForValue().get("multiKey2");
+                System.out.println("multiKey1：" + multiKey1);
+                System.out.println("multiKey2：" + multiKey2);
+                // 将抛异常，但不影响事务的执行
+                // operations.opsForValue().increment("multiKey1");
+
+                // 检测监控的key是否被修改，未修改执行命令，修改取消事务，可以使用断点进行测试
+                return operations.exec();
+            }
+        });
+
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("success", SUCCESS);
+        // 存放的是每条命令返回的结果，分别为 true、true、value、value
+        result.put("list", list);
+
+        return result;
+    }
+
+    /**
+     * Redis流水线
+     * 
+     * @return 执行结果
+     */
+    @SuppressWarnings("unchecked")
+    @GetMapping("pipline")
+    public Map<String, Object> pipline() {
+        long startTime = System.currentTimeMillis();
+        redisTemplate.execute(new SessionCallback<Object>() {
+            @Override
+            public Object execute(RedisOperations operations) throws DataAccessException {
+                // 插入10万条数据
+                for (int i = 0; i < 100000; i++) {
+                    operations.opsForValue().set("pipline:" + i, i);
+                    // 获取值为null
+                    Object value = operations.opsForValue().get("pipline" + i);
+                    Assert.isNull(value, "value应该为null");
+                    // 设置一分钟过期
+                    operations.expire("pipline:" + i, 1L, TimeUnit.MINUTES);
+
+                }
+
+                return null;
+            }
+        });
+        long endTime = System.currentTimeMillis();
+
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("success", SUCCESS);
+        result.put("totalTime", (endTime - startTime));
 
         return result;
     }

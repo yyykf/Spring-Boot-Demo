@@ -58,7 +58,7 @@ public class RedisTemplateControllerTest {
     }
 
     /**
-     * 测试常用操作
+     * 测试常用操作、事务、流水线
      */
     @Test
     public void testOps() throws Exception {
@@ -66,7 +66,9 @@ public class RedisTemplateControllerTest {
         // mvc.perform(MockMvcRequestBuilders.get("/template/hash")
         // mvc.perform(MockMvcRequestBuilders.get("/template/list")
         // mvc.perform(MockMvcRequestBuilders.get("/template/set")
-        mvc.perform(MockMvcRequestBuilders.get("/template/zset")
+        // mvc.perform(MockMvcRequestBuilders.get("/template/zset")
+        // mvc.perform(MockMvcRequestBuilders.get("/template/multi")
+        mvc.perform(MockMvcRequestBuilders.get("/template/pipline")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
