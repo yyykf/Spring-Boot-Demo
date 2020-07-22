@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
-public class RedisTemplateControllerTest {
+public class RedisControllerTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisTemplateControllerTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedisControllerTest.class);
 
     private MockMvc mvc;
 
@@ -51,14 +51,16 @@ public class RedisTemplateControllerTest {
      */
     @Test
     public void testRedisCallback() throws Exception {
+        // @formatter:off
         // String result = mvc.perform(MockMvcRequestBuilders.get("/template/redisCallback")
         String result = mvc.perform(MockMvcRequestBuilders.get("/template/sessionCallback")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(MockMvcResultMatchers.content().string(RedisTemplateController.SUCCESS))
+                .andExpect(MockMvcResultMatchers.content().string(RedisController.SUCCESS))
                 .andDo(MockMvcResultHandlers.print())
                 .andReturn().getResponse().getContentAsString();
+        // @formatter:on
 
         LOGGER.info("执行结果：{}", result);
     }
@@ -68,6 +70,7 @@ public class RedisTemplateControllerTest {
      */
     @Test
     public void testOps() throws Exception {
+        // @formatter:off
         // mvc.perform(MockMvcRequestBuilders.get("/template/string")
         // mvc.perform(MockMvcRequestBuilders.get("/template/hash")
         // mvc.perform(MockMvcRequestBuilders.get("/template/list")
@@ -79,6 +82,7 @@ public class RedisTemplateControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andDo(MockMvcResultHandlers.print());
+        // @formatter:on
     }
 
     /**
@@ -90,5 +94,36 @@ public class RedisTemplateControllerTest {
         redisTemplate.convertAndSend("topic1", "Publish A Message");
         // 睡眠2S，让日志打印完整
         TimeUnit.SECONDS.sleep(2L);
+    }
+
+    /**
+     * 测试Redis 执行Lua脚本，无参数
+     */
+    @Test
+    public void testLuaWithoutArgs() throws Exception {
+        // @formatter:off
+        mvc.perform(MockMvcRequestBuilders.get("/template/luaWithoutArgs").accept(MediaType.APPLICATION_JSON))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andDo(MockMvcResultHandlers.print());
+        // @formatter:on
+    }
+
+    /**
+     * 测试Redis 执行Lua脚本，有参数
+     */
+    @Test
+    public void testLuaWithArgs() throws Exception {
+        // @formatter:off
+        mvc.perform(MockMvcRequestBuilders.get("/template/luaWithArgs")
+                .param("key1", "luaKey1")
+                .param("key2", "luaKey2")
+                .param("value1", "value")
+                .param("value2", "value")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andDo(MockMvcResultHandlers.print());
+        // @formatter:on
     }
 }

@@ -1,10 +1,15 @@
 package com.dayi.redis.controller;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,16 +23,18 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * RedisController 的主控制器
+ * Redis 的主控制器
  * 
  * @author YuKaiFan<yukf @ pvc123.com>
  * @date 2020/7/21 11:13
  */
 @RestController
 @RequestMapping("/template")
-public class RedisTemplateController {
+public class RedisController {
 
     public static final String SUCCESS = "SUCCESS";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedisController.class);
 
     @Resource
     private RedisTemplate<Object, Object> redisTemplate;
@@ -36,7 +43,7 @@ public class RedisTemplateController {
 
     /**
      * RedisCallback接口，可以在同一连接下执行多条命令
-     * 
+     *
      * @return 成功
      */
     @GetMapping("/redisCallback")
@@ -53,7 +60,7 @@ public class RedisTemplateController {
 
     /**
      * SessionCallback接口
-     * 
+     *
      * @return 成功
      */
     @GetMapping("/sessionCallback")
@@ -73,7 +80,7 @@ public class RedisTemplateController {
 
     /**
      * String常用操作
-     * 
+     *
      * @return 成功
      */
     @GetMapping("/string")
@@ -155,7 +162,7 @@ public class RedisTemplateController {
 
     /**
      * Set常用操作
-     * 
+     *
      * @return 操作结果及成功标志
      */
     @GetMapping("/set")
@@ -244,7 +251,7 @@ public class RedisTemplateController {
 
     /**
      * Redis事务
-     * 
+     *
      * @return 执行结果
      */
     @SuppressWarnings("unchecked")
@@ -285,7 +292,7 @@ public class RedisTemplateController {
 
     /**
      * Redis流水线
-     * 
+     *
      * @return 执行结果
      */
     @SuppressWarnings("unchecked")
@@ -314,6 +321,72 @@ public class RedisTemplateController {
         Map<String, Object> result = Maps.newHashMap();
         result.put("success", SUCCESS);
         result.put("totalTime", (endTime - startTime));
+
+        return result;
+    }
+
+    /**
+     * Redis 简单Lua脚本，无参数
+     *
+     * @return 操作结果
+     */
+    @SuppressWarnings("unchecked")
+    @GetMapping("/luaWithoutArgs")
+    public Map<String, Object> luaWithoutArgs() {
+        // 脚本内容 return 'Hello Redis'（可以使用 script.setScriptText()）
+        // 脚本返回类型 String（可以使用 script.setResultType()）
+        RedisScript script = RedisScript.of("return 'Hello Redis'", String.class);
+        // String序列化器
+        RedisSerializer<String> stringSerializer = redisTemplate.getStringSerializer();
+        // 执行Lua脚本，参数和结果都使用String序列化，待操作的参数和结果都为null
+        String executeResult = redisTemplate.execute(script, stringSerializer, stringSerializer, null);
+
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("success", SUCCESS);
+        result.put("executeResult", executeResult);
+
+        return result;
+    }
+
+    /**
+     * 执行带有参数的Lua脚本
+     * 
+     * @param key1
+     *            待操作的键1
+     * @param key2
+     *            待操作的键2
+     * @param value1
+     *            键1对应的值
+     * @param value2
+     *            键2对应的值
+     * @return 操作结果
+     */
+    @SuppressWarnings("unchecked")
+    @GetMapping("/luaWithArgs")
+    public Map<String, Object> luaWithArgs(String key1, String key2, String value1, String value2) {
+        // @formatter:off
+        // 需要参数的Lua脚本
+        String lua = "redis.call('set', KEYS[1], ARGV[1]) \n"
+                + "redis.call('set', KEYS[2], ARGV[2]) \n"
+                + "local str1 = redis.call('get', KEYS[1]) \n"
+                + "local str2 = redis.call('get', KEYS[2]) \n"
+                + "if str1 == str2 then \n"
+                + "return 1 \n"
+                + "end \n"
+                + "return 0";
+        // @formatter:on
+        LOGGER.info("Lua脚本：{}", lua);
+
+        RedisScript script = RedisScript.of(lua, Long.class);
+        RedisSerializer<String> stringSerializer = redisTemplate.getStringSerializer();
+        // 定义key
+        List<Object> keys = Lists.newArrayList(key1, key2);
+        // 执行Lua脚本
+        Object executeResult = redisTemplate.execute(script, stringSerializer, stringSerializer, keys, value1, value2);
+
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("success", SUCCESS);
+        result.put("executeResult", executeResult);
 
         return result;
     }
