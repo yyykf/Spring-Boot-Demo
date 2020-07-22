@@ -1,12 +1,17 @@
 package com.dayi.redis.config;
 
+import com.dayi.redis.listener.RedisMessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.Topic;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Redis配置类
@@ -39,5 +44,34 @@ public class RedisConfig {
         redisTemplate.setHashKeySerializer(stringSerializer);
 
         return redisTemplate;
+    }
+
+    /**
+     * 配置Redis消息监听容器
+     * 
+     * @param connectionFactory
+     *            Redis连接工厂，SpringBoot自动装配
+     * @param redisMessageListener
+     *            自定义消息监听器
+     * @param taskExecutor
+     *            线程池
+     * @return
+     */
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory,
+                                                                       RedisMessageListener redisMessageListener,
+                                                                       ThreadPoolTaskExecutor taskExecutor) {
+        LOGGER.info(">>>>>>>>>>>RedisMessageListenerContainer注入成功");
+
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        // 设置连接工厂
+        container.setConnectionFactory(connectionFactory);
+        // 设置线程池
+        container.setTaskExecutor(taskExecutor);
+        // 监听topic1渠道
+        Topic topic = new ChannelTopic("topic1");
+        container.addMessageListener(redisMessageListener, topic);
+
+        return container;
     }
 }

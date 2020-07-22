@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,8 +18,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.concurrent.TimeUnit;
+
 /**
- * RedisTempalte 控制器测试类
+ * RedisTemplate 控制器测试类
  * 
  * @author YuKaiFan<yukf @ pvc123.com>
  * @date 2020/7/21 14:10
@@ -34,6 +37,9 @@ public class RedisTemplateControllerTest {
 
     @Autowired
     private WebApplicationContext context;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Before
     public void setUp() {
@@ -73,5 +79,16 @@ public class RedisTemplateControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andDo(MockMvcResultHandlers.print());
+    }
+
+    /**
+     * 测试Redis发布和订阅
+     */
+    @Test
+    public void testPubAndSub() throws InterruptedException {
+        // 也可以在Redis客户端使用命令 publish topic1 msg
+        redisTemplate.convertAndSend("topic1", "Publish A Message");
+        // 睡眠2S，让日志打印完整
+        TimeUnit.SECONDS.sleep(2L);
     }
 }
