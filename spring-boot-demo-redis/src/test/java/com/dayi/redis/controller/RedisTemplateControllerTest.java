@@ -42,11 +42,9 @@ public class RedisTemplateControllerTest {
 
     /**
      * 测试RedisCallback
-     *
-     * @throws Exception
      */
     @Test
-    public void testRedisCallback() throws Exception{
+    public void testRedisCallback() throws Exception {
         // String result = mvc.perform(MockMvcRequestBuilders.get("/template/redisCallback")
         String result = mvc.perform(MockMvcRequestBuilders.get("/template/sessionCallback")
                 .accept(MediaType.APPLICATION_JSON))
@@ -57,5 +55,21 @@ public class RedisTemplateControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         LOGGER.info("执行结果：{}", result);
+    }
+
+    /**
+     * 测试常用操作
+     */
+    @Test
+    public void testOps() throws Exception {
+        // mvc.perform(MockMvcRequestBuilders.get("/template/string")
+        // mvc.perform(MockMvcRequestBuilders.get("/template/hash")
+        // mvc.perform(MockMvcRequestBuilders.get("/template/list")
+        // mvc.perform(MockMvcRequestBuilders.get("/template/set")
+        mvc.perform(MockMvcRequestBuilders.get("/template/zset")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andDo(MockMvcResultHandlers.print());
     }
 }
