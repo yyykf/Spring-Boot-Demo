@@ -1,4 +1,5 @@
 spring:
+  # Redis配置
   redis:
     jedis:
       pool:
@@ -7,3 +8,42 @@ spring:
         max-idle: 10  # 最大空闲数
         max-wait: 2000
     timeout: 1000 # 超时时间1s
+  # 缓存配置
+  cache:
+    cache-names: redisCache # 缓存名称，多个值使用逗号分隔
+    redis:
+      cache-null-values: true # 允许缓存null值，默认为true
+      time-to-live: 0ms # 缓存永不超时
+      use-key-prefix: true  # 启用 Redis Key前缀，默认为true
+      key-prefix: com.dayi.userService.userId # Redis Key前缀
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/spring_boot_demo_redis
+    username: root
+    password: root
+    driver-class-name: com.mysql.jdbc.Driver
+    initialization-mode: always
+    tomcat:
+      max-idle: 10
+      max-active: 50
+      max-wait: 10000
+      initial-size: 5
+      # Tomcat数据源默认隔离级别：
+      # 1 读未提交 2 读已提交 3 可重复读 4 串行化
+      default-transaction-isolation: 2
+    schema:
+      - "classpath:db/schema.sql"
+    data:
+      - "classpath:db/data.sql"
+# Mybatis配置
+mybatis:
+  mapper-locations: classpath:com/dayi/redis/dao/mapper/*.xml # Mapper文件位置
+  type-aliases-package: com.dayi.redis.model  # 别名
+  configuration:
+    map-underscore-to-camel-case: true  # 开启驼峰映射
+# 日志配置
+logging:
+  level:
+    org.springframework: debug
+    org.mybatis: debug
+    com.dayi.redis.dao: trace
