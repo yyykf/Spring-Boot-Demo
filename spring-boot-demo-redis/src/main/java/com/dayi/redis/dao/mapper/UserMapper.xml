@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dayi.redis.dao.UserMapper">
+
+    <!-- 添加用户 -->
+    <insert id="addUser" useGeneratedKeys="true" keyProperty="id" parameterType="User">
+        INSERT INTO user (name, password, salt, email, phone_number, status, create_time, last_login_time,
+        last_update_time)
+        VALUES (#{name}, #{password}, #{salt}, #{email}, #{phoneNumber}, #{status}, #{createTime}, #{lastLoginTime},
+        #{lastUpdateTime})
+    </insert>
+
+    <!-- 更新用户 -->
+    <update id="updateUser" parameterType="User">
+        UPDATE user
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="salt != null and salt != ''">salt = #{salt},</if>
+            <if test="email != null and email != ''">email = #{email},</if>
+            <if test="phoneNumber != null and phoneNumber != ''">phone_number = #{phoneNumber},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="lastLoginTime != null">last_login_time = #{lastLoginTime},</if>
+            <if test="lastUpdateTime != null">last_update_time = #{lastUpdateTime}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>
