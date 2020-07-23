@@ -29,14 +29,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Cacheable(value = "redisCache", key = "#id")
+    @Cacheable(value = "redisCache", key = "'com:dayi:userService:userId:' + #id")
     public User getUserById(Long id) {
         // 先从缓存中查，未命中再查数据库，并放入缓存
         return userMapper.getUserById(id);
     }
 
     @Override
-    @CachePut(value = "redisCache", key = "#result.id")
+    @CachePut(value = "redisCache", key = "'com:dayi:userService:userId:' + #id")
     public User addUser(User user) {
         // 插入成功后取用户id加Redis的Key前缀作为 Key，缓存当前用户
         userMapper.addUser(user);
@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CachePut(value = "redisCache", key = "#result.id", condition = "#result != null")
+    @CachePut(value = "redisCache", key = "'com:dayi:userService:userId:' + #id", condition = "#result != null")
     public User updateUser(User user) {
         // 如果原用户存在，更新用户后更新缓存
         // 这里的自调用缓存失效，不用担心读取到缓存中的旧数据
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheEvict(value = "redisCache", key = "#id", beforeInvocation = false)
+    @CacheEvict(value = "redisCache", key = "'com:dayi:userService:userId:' + #id", beforeInvocation = false)
     public boolean deleteById(Long id) {
         // 方法执行后移除缓存
         return 1 == userMapper.deleteById(id);
