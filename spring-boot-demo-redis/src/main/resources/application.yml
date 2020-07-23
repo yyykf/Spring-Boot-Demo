@@ -13,8 +13,8 @@ spring:
     cache-names: redisCache # 缓存名称，多个值使用逗号分隔
     redis:
       cache-null-values: true # 允许缓存null值，默认为true
-      time-to-live: 0ms # 缓存永不超时
-      use-key-prefix: true  # 启用 Redis Key前缀，默认为true
+      time-to-live: 10m # 缓存10分钟
+      use-key-prefix: false  # 启用 Redis Key前缀，默认为true
   # 数据库配置
   datasource:
     url: jdbc:mysql://localhost:3306/spring_boot_demo_redis
